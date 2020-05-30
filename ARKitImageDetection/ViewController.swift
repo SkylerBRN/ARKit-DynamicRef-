@@ -11,6 +11,7 @@ import UIKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
+    
     @IBOutlet var sceneView: ARSCNView!
     
     @IBOutlet weak var blurView: UIVisualEffectView!
@@ -68,20 +69,56 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     /// - Tag: ARReferenceImage-Loading
 	func resetTracking() {
         
-        guard let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil) else {
+       /* guard let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil) else {
             fatalError("Missing expected asset catalog resources.")
-        }
+        } */
         
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.detectionImages = referenceImages
-        session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+        /// Create ARReference Images From Somewhere Other Than The Default Folder
+        func loadDynamicImageReferences(){
 
-        statusViewController.scheduleMessage("Look around to detect images", inSeconds: 7.5, messageType: .contentPlacement)
+            //1. Get The Image From The Folder
+            guard let imageFromBundle = UIImage(named: "moonTarget"),
+            //2. Convert It To A CIImage
+            let imageToCIImage = CIImage(image: imageFromBundle),
+            //3. Then Convert The CIImage To A CGImage
+            let cgImage = convertCIImageToCGImage(inputImage: imageToCIImage)else { return }
+
+            //4. Create An ARReference Image (Remembering Physical Width Is In Metres)
+            let arImage = ARReferenceImage(cgImage, orientation: CGImagePropertyOrientation.up, physicalWidth: 0.2)
+
+            //5. Name The Image
+            arImage.name = "CGImage Test"
+            
+            let configuration = ARWorldTrackingConfiguration()
+            configuration.detectionImages = [arImage]
+            session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
+
+            statusViewController.scheduleMessage("Look around to detect images", inSeconds: 7.5, messageType: .contentPlacement)
+
+    
+        }
+
+
 	}
+    
+
+
+    /// Converts A CIImage To A CGImage
+    ///
+    /// - Parameter inputImage: CIImage
+    /// - Returns: CGImage
+    func convertCIImageToCGImage(inputImage: CIImage) -> CGImage? {
+        let context = CIContext(options: nil)
+        if let cgImage = context.createCGImage(inputImage, from: inputImage.extent) {
+         return cgImage
+        }
+        return nil
+    }
 
     // MARK: - ARSCNViewDelegate (Image detection results)
     /// - Tag: ARImageAnchor-Visualizing
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        
         guard let imageAnchor = anchor as? ARImageAnchor else { return }
         let referenceImage = imageAnchor.referenceImage
         updateQueue.async {
@@ -107,6 +144,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             
             // Add the plane visualization to the scene.
             node.addChildNode(planeNode)
+        
         }
 
         DispatchQueue.main.async {
@@ -115,15 +153,15 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             self.statusViewController.showMessage("Detected image “\(imageName)”")
         }
     }
-
+//hi
     var imageHighlightAction: SCNAction {
         return .sequence([
             .wait(duration: 0.25),
             .fadeOpacity(to: 0.85, duration: 0.25),
             .fadeOpacity(to: 0.15, duration: 0.25),
             .fadeOpacity(to: 0.85, duration: 0.25),
-            .fadeOut(duration: 0.5),
-            .removeFromParentNode()
+            /* .fadeOut(duration: 0.5),
+            .removeFromParentNode() */
         ])
     }
 }
