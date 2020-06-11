@@ -15,6 +15,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     @IBOutlet var sceneView: ARSCNView!
     
     @IBOutlet weak var blurView: UIVisualEffectView!
+    var theImage: ARReferenceImage!
     
     /// The view controller that displays the status and "restart experience" UI.
     lazy var statusViewController: StatusViewController = {
@@ -69,28 +70,14 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     /// - Tag: ARReferenceImage-Loading
 	func resetTracking() {
         
-       /* guard let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil) else {
+       guard let referenceImage = theImage else {
             fatalError("Missing expected asset catalog resources.")
-        } */
+        }
         
-        /// Create ARReference Images From Somewhere Other Than The Default Folder
-        func loadDynamicImageReferences(){
-
-            //1. Get The Image From The Folder
-            guard let imageFromBundle = UIImage(named: "moonTarget"),
-            //2. Convert It To A CIImage
-            let imageToCIImage = CIImage(image: imageFromBundle),
-            //3. Then Convert The CIImage To A CGImage
-            let cgImage = convertCIImageToCGImage(inputImage: imageToCIImage)else { return }
-
-            //4. Create An ARReference Image (Remembering Physical Width Is In Metres)
-            let arImage = ARReferenceImage(cgImage, orientation: CGImagePropertyOrientation.up, physicalWidth: 0.2)
-
-            //5. Name The Image
-            arImage.name = "CGImage Test"
+        /// Create ARReference Images From Somewhere Other Than The Default Fo
             
             let configuration = ARWorldTrackingConfiguration()
-            configuration.detectionImages = [arImage]
+            configuration.detectionImages = [referenceImage]
             session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
 
             statusViewController.scheduleMessage("Look around to detect images", inSeconds: 7.5, messageType: .contentPlacement)
@@ -98,8 +85,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
         }
 
-
-	}
     
 
 
